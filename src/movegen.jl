@@ -240,7 +240,7 @@ function add_queen_moves!(board, moves, sqr, piece)
     end
 
     captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & board.black_pieces : dest_sqr_bb & board.white_pieces
-    
+
     while captured_bb != 0
         to_sqr = trailing_zeros(captured_bb)
         add_capture_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
@@ -249,6 +249,42 @@ function add_queen_moves!(board, moves, sqr, piece)
 
     quiet_bb = dest_sqr_bb & ~(board.white_pieces | board.black_pieces)
 
+    while quiet_bb != 0
+        to_sqr = trailing_zeros(quiet_bb)
+        add_quiet_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
+        quiet_bb &= quiet_bb - 1
+    end
+end
+
+function add_king_moves!(board, moves, sqr, piece)
+    piece_color = piece & 0x03
+    if piece_color != board.side_to_move
+        return
+    end
+
+    sqr_bb = UInt64(1) << (sqr - 1)
+
+
+    dest_sqr_bb = UInt64(0)
+    dest_sqr_bb |= ((sqr_bb & CLEAR_FILE_A) >> 1) | 
+                    ((sqr_bb & CLEAR_FILE_A) << 7) |
+                    ((sqr_bb & CLEAR_FILE_A) >> 9) |
+                    ((sqr_bb & CLEAR_FILE_H) << 1) |
+                    ((sqr_bb & CLEAR_FILE_H) << 9) |
+                    ((sqr_bb & CLEAR_FILE_H) >> 7) |
+                    (sqr_bb >> 8) |
+                    (sqr_bb << 8)
+
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & board.black_pieces : dest_sqr_bb & board.white_pieces
+
+    while captured_bb != 0
+        to_sqr = trailing_zeros(captured_bb)
+        add_capture_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
+        captured_bb &= captured_bb - 1
+    end
+
+    quiet_bb = dest_sqr_bb & ~(board.white_pieces | board.black_pieces)
+    
     while quiet_bb != 0
         to_sqr = trailing_zeros(quiet_bb)
         add_quiet_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
@@ -274,9 +310,9 @@ function generate_moves(board::Board)
         elseif piece_type == ROOK
             # add_rook_moves!(board, moves, sqr, piece)
         elseif piece_type == QUEEN
-            add_queen_moves!(board, moves, sqr, piece)
+            # add_queen_moves!(board, moves, sqr, piece)
         elseif piece_type == KING
-            # TODO
+            add_king_moves!(board, moves, sqr, piece)
         elseif piece_type == PAWN
             # TODO
         end
