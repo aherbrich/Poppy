@@ -174,6 +174,88 @@ function add_rook_moves!(board, moves, sqr, piece)
     end
 end
 
+function add_queen_moves!(board, moves, sqr, piece)
+    piece_color = piece & 0x03
+    if piece_color != board.side_to_move
+        return
+    end
+
+    dest_sqr_bb = UInt64(0)
+    all_bb = (board.white_pieces | board.black_pieces) & ~UInt64(1 << (sqr - 1))
+
+    # northeast
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_A) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb << 7
+        sqr_bb <<= 7
+    end
+
+    # southeast
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_A) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb >> 9
+        sqr_bb >>= 9
+    end
+
+    # northwest
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_H) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb << 9
+        sqr_bb <<= 9
+    end
+
+    # southwest
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_H) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb >> 7
+        sqr_bb >>= 7
+    end
+
+    # north
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_RANK_8) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb << 8
+        sqr_bb <<= 8
+    end
+
+    # south
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_RANK_1) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb >> 8
+        sqr_bb >>= 8
+    end
+
+    # east
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_H) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb << 1
+        sqr_bb <<= 1
+    end
+
+    # west
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_A) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb >> 1
+        sqr_bb >>= 1
+    end
+
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & board.black_pieces : dest_sqr_bb & board.white_pieces
+    
+    while captured_bb != 0
+        to_sqr = trailing_zeros(captured_bb)
+        add_capture_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
+        captured_bb &= captured_bb - 1
+    end
+
+    quiet_bb = dest_sqr_bb & ~(board.white_pieces | board.black_pieces)
+
+    while quiet_bb != 0
+        to_sqr = trailing_zeros(quiet_bb)
+        add_quiet_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
+        quiet_bb &= quiet_bb - 1
+    end
+end
+
 # generate all legal moves
 function generate_moves(board::Board)
     moves = []
@@ -190,9 +272,9 @@ function generate_moves(board::Board)
         elseif piece_type == BISHOP
             # add_bishop_moves!(board, moves, sqr, piece)
         elseif piece_type == ROOK
-            add_rook_moves!(board, moves, sqr, piece)
+            # add_rook_moves!(board, moves, sqr, piece)
         elseif piece_type == QUEEN
-            # TODO
+            add_queen_moves!(board, moves, sqr, piece)
         elseif piece_type == KING
             # TODO
         elseif piece_type == PAWN
