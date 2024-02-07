@@ -62,6 +62,60 @@ function add_knight_moves!(board, moves, sqr, piece)
     end
 end
 
+function add_bishop_moves!(boad, moves, sqr, piece)
+    piece_color = piece & 0x03
+    if piece_color != board.side_to_move
+        return
+    end
+
+    dest_sqr_bb = UInt64(0)
+    all_bb = (board.white_pieces | board.black_pieces) & ~UInt64(1 << (sqr - 1))
+
+    # northeast
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_A) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb << 7
+        sqr_bb <<= 7
+    end
+
+    # southeast
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_A) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb >> 9
+        sqr_bb >>= 9
+    end
+
+    # northwest
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_H) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb << 9
+        sqr_bb <<= 9
+    end
+
+    # southwest
+    sqr_bb = UInt64(1) << (sqr - 1)
+    while sqr_bb != 0 && (sqr_bb & CLEAR_FILE_H) != 0 && (sqr_bb & all_bb) == 0
+        dest_sqr_bb |= sqr_bb >> 7
+        sqr_bb >>= 7
+    end
+
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & board.black_pieces : dest_sqr_bb & board.white_pieces
+
+    while captured_bb != 0
+        to_sqr = trailing_zeros(captured_bb)
+        add_capture_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
+        captured_bb &= captured_bb - 1
+    end
+
+    quiet_bb = dest_sqr_bb & ~(board.white_pieces | board.black_pieces)
+
+    while quiet_bb != 0
+        to_sqr = trailing_zeros(quiet_bb)
+        add_quiet_move!(board, moves, sqr, to_sqr, piece, board.castling_rights)
+        quiet_bb &= quiet_bb - 1
+    end
+end
+
 # generate all legal moves
 function generate_moves(board::Board)
     moves = []
@@ -76,7 +130,7 @@ function generate_moves(board::Board)
         if piece_type == KNIGHT
             add_knight_moves!(board, moves, sqr, piece)
         elseif piece_type == BISHOP
-            # TODO
+            add_bishop_moves!(board, moves, sqr, piece)
         elseif piece_type == ROOK
             # TODO
         elseif piece_type == QUEEN

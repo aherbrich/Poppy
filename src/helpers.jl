@@ -1,4 +1,5 @@
 function print_bb(bb)
+    println("")
     mask = 0xff00000000000000
     shift = 56
     for _ in 1:8
