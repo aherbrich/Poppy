@@ -1,0 +1,13 @@
+name = "nuthead"
+uuid = "5c86ff65-3cf9-48ed-af9b-6b889977223e"
+authors = ["Alexander Herbrich <aherbrich32@gmail.com> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
