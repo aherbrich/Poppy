@@ -8,3 +8,15 @@ function print_bb(bb)
         shift -= 8
     end
 end
+
+macro is_white(piece)
+    esc(:((piece & 0b1000) == 0))
+end
+
+macro piece_type(piece)
+    esc(:(piece & 0b0111))
+end
+
+macro piece_color(piece)
+    esc(:(piece & 0b1000))
+end

@@ -1,3 +1,5 @@
+include("helpers.jl")
+
 function add_castle_move!(board, moves, from_sq, to_sq, piece, castling)
     push!(moves, Move(piece, from_sq, to_sq, NO_PIECE, false, NO_PIECE, castling, NO_SQUARE, board.castling_rights, board.ep_square))
 end
@@ -9,7 +11,7 @@ end
 
 function add_promotion_move!(board, moves, from_sq, to_sq, piece)
     captured_piece = board.squares[to_sq]
-    color = piece & 0x03
+    color = @piece_color(piece)
     push!(moves, Move(piece, from_sq, to_sq, captured_piece, false, QUEEN | color, NO_CASTLING, NO_SQUARE, board.castling_rights, board.ep_square))
     push!(moves, Move(piece, from_sq, to_sq, captured_piece, false, ROOK | color, NO_CASTLING, NO_SQUARE, board.castling_rights, board.ep_square))
     push!(moves, Move(piece, from_sq, to_sq, captured_piece, false, BISHOP | color, NO_CASTLING, NO_SQUARE, board.castling_rights, board.ep_square))
@@ -31,7 +33,7 @@ function add_quiet_move!(board, moves, from_sq, to_sq, piece)
 end
 
 function add_knight_moves!(board, moves, sqr, piece)
-    piece_color = piece & 0x03
+    piece_color = @piece_color(piece)
     if piece_color != board.side_to_move
         return
     end
@@ -65,7 +67,7 @@ function add_knight_moves!(board, moves, sqr, piece)
 end
 
 function add_bishop_moves!(board, moves, sqr, piece)
-    piece_color = piece & 0x03
+    piece_color = @piece_color(piece)
     if piece_color != board.side_to_move
         return
     end
@@ -119,7 +121,7 @@ function add_bishop_moves!(board, moves, sqr, piece)
 end
 
 function add_rook_moves!(board, moves, sqr, piece)
-    piece_color = piece & 0x03
+    piece_color = @piece_color(piece)
     if piece_color != board.side_to_move
         return
     end
@@ -178,7 +180,7 @@ function add_queen_moves!(board, moves, sqr, piece)
 end
 
 function add_king_moves!(board, moves, sqr, piece)
-    piece_color = piece & 0x03
+    piece_color = @piece_color(piece)
     if piece_color != board.side_to_move
         return
     end
@@ -213,7 +215,7 @@ function add_king_moves!(board, moves, sqr, piece)
 end
 
 function add_pawn_moves!(board, moves, sqr, piece)
-    piece_color = piece & 0x03
+    piece_color = @piece_color(piece)
     if piece_color != board.side_to_move
         return
     end
@@ -387,7 +389,7 @@ function generate_moves(board::Board)
         end
         
         piece = board.squares[sqr]
-        piece_type = piece & ~0x03
+        piece_type = @piece_type(piece)
 
         if piece_type == KNIGHT
             add_knight_moves!(board, moves, sqr, piece)

@@ -1,3 +1,4 @@
+include("helpers.jl")
 mutable struct Board
     # one 64 field array for the board  
     squares::Array{UInt8, 1}
@@ -59,7 +60,6 @@ function Board()
     )
 end # Board
 
-
 function clear!(board::Board)
     for i in 1:64
         board.squares[i] = EMPTY
@@ -93,7 +93,7 @@ function set_piece!(board::Board, piece::UInt8, file::Int, rank::Int)
     square = (rank - 1) * 8 + file
     board.squares[square] = piece
 
-    if piece & WHITE != 0
+    if @is_white(piece)
         board.white_pieces |= 1 << (square - 1)
     else
         board.black_pieces |= 1 << (square - 1)
