@@ -1,4 +1,3 @@
-include("helpers.jl")
 mutable struct Board
     # one 64 field array for the board  
     squares::Vector{UInt8}
@@ -23,7 +22,7 @@ end # Board
 
 function Board()
     return Board(fill(0x00, 64), fill(0x0000000000000000, 16),  0x00000000, 0x00000000,  0x00, 0x00, 0x00,  0x0000, 0x0000)
-end # Board
+end # Board()
 
 function clear!(board::Board)
     for i in 1:64
@@ -43,7 +42,7 @@ function clear!(board::Board)
 
     board.halfmove_clock = 0x0000
     board.fullmove_number = 0x0000
-end
+end # clear!
 
 function set_piece!(board::Board, piece::UInt8, file::Int, rank::Int)
     square = (rank - 1) * 8 + file
