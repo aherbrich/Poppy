@@ -49,7 +49,7 @@ function add_knight_moves!(board, moves, sqr, piece)
                 ((sqr_bb & CLEAR_FILE_A) >> 17) |
                 ((sqr_bb & CLEAR_FILE_H) >> 15)
 
-    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.black_king) : dest_sqr_bb & (board.white_pieces & ~board.white_king)
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.bb_for[BLACK_KING]) : dest_sqr_bb & (board.white_pieces & ~board.bb_for[WHITE_KING])
 
     while captured_bb != 0
         to_sqr = trailing_zeros(captured_bb) + 1
@@ -103,7 +103,7 @@ function add_bishop_moves!(board, moves, sqr, piece)
         sqr_bb >>= 7
     end
 
-    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.black_king) : dest_sqr_bb & (board.white_pieces & ~board.white_king)
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.bb_for[BLACK_KING]) : dest_sqr_bb & (board.white_pieces & ~board.bb_for[WHITE_KING])
 
     while captured_bb != 0
         to_sqr = trailing_zeros(captured_bb)  + 1
@@ -157,7 +157,7 @@ function add_rook_moves!(board, moves, sqr, piece)
         sqr_bb >>= 1
     end
 
-    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.black_king) : dest_sqr_bb & (board.white_pieces & ~board.white_king)
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.bb_for[BLACK_KING]) : dest_sqr_bb & (board.white_pieces & ~board.bb_for[WHITE_KING])
         
     while captured_bb != 0
         to_sqr = trailing_zeros(captured_bb)  + 1
@@ -197,7 +197,7 @@ function add_king_moves!(board, moves, sqr, piece)
                     (sqr_bb >> 8) |
                     (sqr_bb << 8)
 
-    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.black_king) : dest_sqr_bb & (board.white_pieces & ~board.white_king)
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.bb_for[BLACK_KING]) : dest_sqr_bb & (board.white_pieces & ~board.bb_for[WHITE_KING])
 
     while captured_bb != 0
         to_sqr = trailing_zeros(captured_bb)  + 1
@@ -250,7 +250,7 @@ function add_pawn_moves!(board, moves, sqr, piece)
 
     # captures
     dest_sqr_bb = board.side_to_move == WHITE ? ((sqr_bb & CLEAR_FILE_A) << 7) | ((sqr_bb & CLEAR_FILE_H) << 9) : ((sqr_bb & CLEAR_FILE_A) >> 9) | ((sqr_bb & CLEAR_FILE_H) >> 7)
-    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.black_king) : dest_sqr_bb & (board.white_pieces & ~board.white_king)
+    captured_bb = board.side_to_move == WHITE ? dest_sqr_bb & (board.black_pieces & ~board.bb_for[BLACK_KING]) : dest_sqr_bb & (board.white_pieces & ~board.bb_for[WHITE_KING])
 
     while captured_bb != 0
         to_sqr = trailing_zeros(captured_bb)  + 1
@@ -413,30 +413,30 @@ function generate_moves(board::Board)
     oo_allowed = board.side_to_move == WHITE ? (board.castling_rights & CASTLING_WK) != 0 : (board.castling_rights & CASTLING_BK) != 0
     if (all_bb & oo_mask) == 0 && oo_allowed
         if board.side_to_move == WHITE
-            attackers = (bishop_attacks(board, 5) & (board.black_bishops | board.black_queens)) |
-                    (bishop_attacks(board, 6) & (board.black_bishops | board.black_queens)) |
-                    (rook_attacks(board, 5) & (board.black_rooks | board.black_queens)) |
-                    (rook_attacks(board, 6) & (board.black_rooks | board.black_queens)) |
-                    (knight_attacks(board, 5) & board.black_knights) |
-                    (knight_attacks(board, 6) & board.black_knights) |
-                    (pawn_attacks(board, 5, WHITE) & board.black_pawns) |
-                    (pawn_attacks(board, 6, WHITE) & board.black_pawns) |
-                    (king_attacks(board, 5) & board.black_king) |
-                    (king_attacks(board, 6) & board.black_king)
+            attackers = (bishop_attacks(board, 5) & (board.bb_for[BLACK_BISHOP] | board.bb_for[BLACK_QUEEN])) |
+                    (bishop_attacks(board, 6) & (board.bb_for[BLACK_BISHOP] | board.bb_for[BLACK_QUEEN])) |
+                    (rook_attacks(board, 5) & (board.bb_for[BLACK_ROOK] | board.bb_for[BLACK_QUEEN])) |
+                    (rook_attacks(board, 6) & (board.bb_for[BLACK_ROOK] | board.bb_for[BLACK_QUEEN])) |
+                    (knight_attacks(board, 5) & board.bb_for[BLACK_KNIGHT]) |
+                    (knight_attacks(board, 6) & board.bb_for[BLACK_KNIGHT]) |
+                    (pawn_attacks(board, 5, WHITE) & board.bb_for[BLACK_PAWN]) |
+                    (pawn_attacks(board, 6, WHITE) & board.bb_for[BLACK_PAWN]) |
+                    (king_attacks(board, 5) & board.bb_for[BLACK_KING]) |
+                    (king_attacks(board, 6) & board.bb_for[BLACK_KING])
             if attackers == 0
                 add_castle_move!(board, moves, 5, 7, WHITE_KING, CASTLING_WK)
             end
         else
-            attackers = (bishop_attacks(board, 61) & (board.white_bishops | board.white_queens)) |
-                    (bishop_attacks(board, 62) & (board.white_bishops | board.white_queens)) |
-                    (rook_attacks(board, 61) & (board.white_rooks | board.white_queens)) |
-                    (rook_attacks(board, 62) & (board.white_rooks | board.white_queens)) |
-                    (knight_attacks(board, 61) & board.white_knights) |
-                    (knight_attacks(board, 62) & board.white_knights) |
-                    (pawn_attacks(board, 61, BLACK) & board.white_pawns) |
-                    (pawn_attacks(board, 62, BLACK) & board.white_pawns) |
-                    (king_attacks(board, 61) & board.white_king) |
-                    (king_attacks(board, 62) & board.white_king)
+            attackers = (bishop_attacks(board, 61) & (board.bb_for[WHITE_BISHOP] | board.bb_for[WHITE_QUEEN])) |
+                    (bishop_attacks(board, 62) & (board.bb_for[WHITE_BISHOP] | board.bb_for[WHITE_QUEEN])) |
+                    (rook_attacks(board, 61) & (board.bb_for[WHITE_ROOK] | board.bb_for[WHITE_QUEEN])) |
+                    (rook_attacks(board, 62) & (board.bb_for[WHITE_ROOK] | board.bb_for[WHITE_QUEEN])) |
+                    (knight_attacks(board, 61) & board.bb_for[WHITE_KNIGHT]) |
+                    (knight_attacks(board, 62) & board.bb_for[WHITE_KNIGHT]) |
+                    (pawn_attacks(board, 61, BLACK) & board.bb_for[WHITE_PAWN]) |
+                    (pawn_attacks(board, 62, BLACK) & board.bb_for[WHITE_PAWN]) |
+                    (king_attacks(board, 61) & board.bb_for[WHITE_KING]) |
+                    (king_attacks(board, 62) & board.bb_for[WHITE_KING])
             if attackers == 0
                 add_castle_move!(board, moves, 61, 63, BLACK_KING, CASTLING_BK)
             end
@@ -448,30 +448,30 @@ function generate_moves(board::Board)
     ooo_allowed = board.side_to_move == WHITE ? (board.castling_rights & CASTLING_WQ) != 0 : (board.castling_rights & CASTLING_BQ) != 0
     if (all_bb & ooo_mask) == 0 && ooo_allowed
         if board.side_to_move == WHITE
-            attackers = (bishop_attacks(board, 5) & (board.black_bishops | board.black_queens)) |
-                    (bishop_attacks(board, 4) & (board.black_bishops | board.black_queens)) |
-                    (rook_attacks(board, 5) & (board.black_rooks | board.black_queens)) |
-                    (rook_attacks(board, 4) & (board.black_rooks | board.black_queens)) |
-                    (knight_attacks(board, 5) & board.black_knights) |
-                    (knight_attacks(board, 4) & board.black_knights) |
-                    (pawn_attacks(board, 5, WHITE) & board.black_pawns) |
-                    (pawn_attacks(board, 4, WHITE) & board.black_pawns) |
-                    (king_attacks(board, 5) & board.black_king) |
-                    (king_attacks(board, 4) & board.black_king)
+            attackers = (bishop_attacks(board, 5) & (board.bb_for[BLACK_BISHOP] | board.bb_for[BLACK_QUEEN])) |
+                    (bishop_attacks(board, 4) & (board.bb_for[BLACK_BISHOP] | board.bb_for[BLACK_QUEEN])) |
+                    (rook_attacks(board, 5) & (board.bb_for[BLACK_ROOK] | board.bb_for[BLACK_QUEEN])) |
+                    (rook_attacks(board, 4) & (board.bb_for[BLACK_ROOK] | board.bb_for[BLACK_QUEEN])) |
+                    (knight_attacks(board, 5) & board.bb_for[BLACK_KNIGHT]) |
+                    (knight_attacks(board, 4) & board.bb_for[BLACK_KNIGHT]) |
+                    (pawn_attacks(board, 5, WHITE) & board.bb_for[BLACK_PAWN]) |
+                    (pawn_attacks(board, 4, WHITE) & board.bb_for[BLACK_PAWN]) |
+                    (king_attacks(board, 5) & board.bb_for[BLACK_KING]) |
+                    (king_attacks(board, 4) & board.bb_for[BLACK_KING])
             if attackers == 0
                 add_castle_move!(board, moves, 5, 3, WHITE_KING, CASTLING_WQ)
             end
         else
-            attackers = (bishop_attacks(board, 61) & (board.white_bishops | board.white_queens)) |
-                    (bishop_attacks(board, 60) & (board.white_bishops | board.white_queens)) |
-                    (rook_attacks(board, 61) & (board.white_rooks | board.white_queens)) |
-                    (rook_attacks(board, 60) & (board.white_rooks | board.white_queens)) |
-                    (knight_attacks(board, 61) & board.white_knights) |
-                    (knight_attacks(board, 60) & board.white_knights) |
-                    (pawn_attacks(board, 61, BLACK) & board.white_pawns) |
-                    (pawn_attacks(board, 60, BLACK) & board.white_pawns) |
-                    (king_attacks(board, 61) & board.white_king) |
-                    (king_attacks(board, 60) & board.white_king)
+            attackers = (bishop_attacks(board, 61) & (board.bb_for[WHITE_BISHOP] | board.bb_for[WHITE_QUEEN])) |
+                    (bishop_attacks(board, 60) & (board.bb_for[WHITE_BISHOP] | board.bb_for[WHITE_QUEEN])) |
+                    (rook_attacks(board, 61) & (board.bb_for[WHITE_ROOK] | board.bb_for[WHITE_QUEEN])) |
+                    (rook_attacks(board, 60) & (board.bb_for[WHITE_ROOK] | board.bb_for[WHITE_QUEEN])) |
+                    (knight_attacks(board, 61) & board.bb_for[WHITE_KNIGHT]) |
+                    (knight_attacks(board, 60) & board.bb_for[WHITE_KNIGHT]) |
+                    (pawn_attacks(board, 61, BLACK) & board.bb_for[WHITE_PAWN]) |
+                    (pawn_attacks(board, 60, BLACK) & board.bb_for[WHITE_PAWN]) |
+                    (king_attacks(board, 61) & board.bb_for[WHITE_KING]) |
+                    (king_attacks(board, 60) & board.bb_for[WHITE_KING])
             if attackers == 0
                 add_castle_move!(board, moves, 61, 59, BLACK_KING, CASTLING_BQ)
             end
@@ -499,14 +499,16 @@ function make_move!(board::Board, move::Move)
         # update white pieces bitboard
         board.white_pieces &= ~from_bb
         board.white_pieces |= to_bb
+        board.bb_for[move.piece] &= ~from_bb
+        board.bb_for[move.piece] |= to_bb
 
         # update black pieces bitboard (ignoring en passant captures)
         board.black_pieces &= ~to_bb
-        board.black_pawns &= ~to_bb
-        board.black_knights &= ~to_bb
-        board.black_bishops &= ~to_bb
-        board.black_rooks &= ~to_bb
-        board.black_queens &= ~to_bb
+        board.bb_for[BLACK_PAWN] &= ~to_bb
+        board.bb_for[BLACK_KNIGHT] &= ~to_bb
+        board.bb_for[BLACK_BISHOP] &= ~to_bb
+        board.bb_for[BLACK_ROOK] &= ~to_bb
+        board.bb_for[BLACK_QUEEN] &= ~to_bb
 
         # adjust castle rights if rook was captured
         if move.captured_piece != NO_PIECE
@@ -523,45 +525,23 @@ function make_move!(board::Board, move::Move)
 
         # update bitboard + flags based on piece type
         if move.piece == WHITE_KING
-            board.white_king = to_bb
             board.castling_rights &= ~(CASTLING_WK | CASTLING_WQ)
-        elseif move.piece == WHITE_KNIGHT
-            board.white_knights &= ~from_bb
-            board.white_knights |= to_bb
-        elseif move.piece == WHITE_BISHOP
-            board.white_bishops &= ~from_bb
-            board.white_bishops |= to_bb
         elseif move.piece == WHITE_ROOK
-            board.white_rooks &= ~from_bb
-            board.white_rooks |= to_bb
             if move.from_sqr == 1
                 board.castling_rights &= ~CASTLING_WQ
             elseif move.from_sqr == 8
                 board.castling_rights &= ~CASTLING_WK
             end
-        elseif move.piece == WHITE_QUEEN
-            board.white_queens &= ~from_bb
-            board.white_queens |= to_bb
         elseif move.piece == WHITE_PAWN
-            board.white_pawns &= ~from_bb
-            board.white_pawns |= to_bb
             if move.is_ep_capture
                 ep_sqr = move.to_sqr - 8
                 board.squares[ep_sqr] = NO_PIECE
                 board.black_pieces &= ~(UInt64(1) << (ep_sqr - 1))
-                board.black_pawns &= ~(UInt64(1) << (ep_sqr - 1))
+                board.bb_for[BLACK_PAWN] &= ~(UInt64(1) << (ep_sqr - 1))
             elseif move.promoted_piece != NO_PIECE
                 board.squares[move.to_sqr] = move.promoted_piece
-                board.white_pawns &= ~to_bb
-                if move.promoted_piece == WHITE_QUEEN
-                    board.white_queens |= to_bb
-                elseif move.promoted_piece == WHITE_ROOK
-                    board.white_rooks |= to_bb
-                elseif move.promoted_piece == WHITE_BISHOP
-                    board.white_bishops |= to_bb
-                elseif move.promoted_piece == WHITE_KNIGHT
-                    board.white_knights |= to_bb
-                end
+                board.bb_for[WHITE_PAWN] &= ~from_bb
+                board.bb_for[move.promoted_piece] |= to_bb
             elseif move.ep_sqr != NO_SQUARE
                 board.ep_square = move.ep_sqr
             end
@@ -578,14 +558,16 @@ function make_move!(board::Board, move::Move)
         # update black pieces bitboard
         board.black_pieces &= ~from_bb
         board.black_pieces |= to_bb
+        board.bb_for[move.piece] &= ~from_bb
+        board.bb_for[move.piece] |= to_bb
 
         # update white pieces bitboard (ignoring en passant captures)
         board.white_pieces &= ~to_bb
-        board.white_pawns &= ~to_bb
-        board.white_knights &= ~to_bb
-        board.white_bishops &= ~to_bb
-        board.white_rooks &= ~to_bb
-        board.white_queens &= ~to_bb
+        board.bb_for[WHITE_PAWN] &= ~to_bb
+        board.bb_for[WHITE_KNIGHT] &= ~to_bb
+        board.bb_for[WHITE_BISHOP] &= ~to_bb
+        board.bb_for[WHITE_ROOK] &= ~to_bb
+        board.bb_for[WHITE_QUEEN] &= ~to_bb
 
         # adjust castle rights if rook was captured
         if move.captured_piece != NO_PIECE
@@ -598,45 +580,23 @@ function make_move!(board::Board, move::Move)
 
         # update bitboard + flags based on piece type
         if move.piece == BLACK_KING
-            board.black_king = to_bb
             board.castling_rights &= ~(CASTLING_BK | CASTLING_BQ)
-        elseif move.piece == BLACK_KNIGHT
-            board.black_knights &= ~from_bb
-            board.black_knights |= to_bb
-        elseif move.piece == BLACK_BISHOP
-            board.black_bishops &= ~from_bb
-            board.black_bishops |= to_bb
         elseif move.piece == BLACK_ROOK
-            board.black_rooks &= ~from_bb
-            board.black_rooks |= to_bb
             if move.from_sqr == 57
                 board.castling_rights &= ~CASTLING_BQ
             elseif move.from_sqr == 64
                 board.castling_rights &= ~CASTLING_BK
             end
-        elseif move.piece == BLACK_QUEEN
-            board.black_queens &= ~from_bb
-            board.black_queens |= to_bb
         elseif move.piece == BLACK_PAWN
-            board.black_pawns &= ~from_bb
-            board.black_pawns |= to_bb
             if move.is_ep_capture
                 ep_sqr = move.to_sqr + 8
                 board.squares[ep_sqr] = NO_PIECE
                 board.white_pieces &= ~(UInt64(1) << (ep_sqr - 1))
-                board.white_pawns &= ~(UInt64(1) << (ep_sqr - 1))
+                board.bb_for[WHITE_PAWN] &= ~(UInt64(1) << (ep_sqr - 1))
             elseif move.promoted_piece != NO_PIECE
                 board.squares[move.to_sqr] = move.promoted_piece
-                board.black_pawns &= ~to_bb
-                if move.promoted_piece == BLACK_QUEEN
-                    board.black_queens |= to_bb
-                elseif move.promoted_piece == BLACK_ROOK
-                    board.black_rooks |= to_bb
-                elseif move.promoted_piece == BLACK_BISHOP
-                    board.black_bishops |= to_bb
-                elseif move.promoted_piece == BLACK_KNIGHT
-                    board.black_knights |= to_bb
-                end
+                board.bb_for[BLACK_PAWN] &= ~to_bb
+                board.bb_for[move.promoted_piece] |= to_bb
             elseif move.ep_sqr != NO_SQUARE
                 board.ep_square = move.ep_sqr
             end
@@ -648,32 +608,32 @@ function make_move!(board::Board, move::Move)
         board.squares[8] = NO_PIECE
         board.white_pieces &= ~(UInt64(1) << 7)
         board.white_pieces |= UInt64(1) << 5
-        board.white_rooks &= ~(UInt64(1) << 7)
-        board.white_rooks |= UInt64(1) << 5
+        board.bb_for[WHITE_ROOK] &= ~(UInt64(1) << 7)
+        board.bb_for[WHITE_ROOK] |= UInt64(1) << 5
         board.castling_rights &= ~(CASTLING_WK | CASTLING_WQ)
     elseif move.castling == CASTLING_WQ
         board.squares[4] = WHITE_ROOK
         board.squares[1] = NO_PIECE
         board.white_pieces &= ~(UInt64(1) << 0)
         board.white_pieces |= UInt64(1) << 3
-        board.white_rooks &= ~(UInt64(1) << 0)
-        board.white_rooks |= UInt64(1) << 3
+        board.bb_for[WHITE_ROOK] &= ~(UInt64(1) << 0)
+        board.bb_for[WHITE_ROOK] |= UInt64(1) << 3
         board.castling_rights &= ~(CASTLING_WK | CASTLING_WQ)
     elseif move.castling == CASTLING_BK
         board.squares[62] = BLACK_ROOK
         board.squares[64] = NO_PIECE
         board.black_pieces &= ~(UInt64(1) << 63)
         board.black_pieces |= UInt64(1) << 61
-        board.black_rooks &= ~(UInt64(1) << 63)
-        board.black_rooks |= UInt64(1) << 61
+        board.bb_for[BLACK_ROOK] &= ~(UInt64(1) << 63)
+        board.bb_for[BLACK_ROOK] |= UInt64(1) << 61
         board.castling_rights &= ~(CASTLING_BK | CASTLING_BQ)
     elseif move.castling == CASTLING_BQ
         board.squares[60] = BLACK_ROOK
         board.squares[57] = NO_PIECE
         board.black_pieces &= ~(UInt64(1) << 56)
         board.black_pieces |= UInt64(1) << 59
-        board.black_rooks &= ~(UInt64(1) << 56)
-        board.black_rooks |= UInt64(1) << 59
+        board.bb_for[BLACK_ROOK] &= ~(UInt64(1) << 56)
+        board.bb_for[BLACK_ROOK] |= UInt64(1) << 59
         board.castling_rights &= ~(CASTLING_BK | CASTLING_BQ)
     end
 
@@ -698,56 +658,27 @@ function unmake_move!(board::Board, move::Move)
         # update white pieces bitboard
         board.white_pieces &= ~to_bb
         board.white_pieces |= from_bb
+        board.bb_for[move.piece] &= ~to_bb
+        board.bb_for[move.piece] |= from_bb
 
         # update black pieces bitboard (ignoring en passant captures)
         if move.captured_piece != NO_PIECE && move.is_ep_capture == false
             board.black_pieces |= to_bb
-            if move.captured_piece == BLACK_PAWN
-                board.black_pawns |= to_bb
-            elseif move.captured_piece == BLACK_KNIGHT
-                board.black_knights |= to_bb
-            elseif move.captured_piece == BLACK_BISHOP
-                board.black_bishops |= to_bb
-            elseif move.captured_piece == BLACK_ROOK
-                board.black_rooks |= to_bb
-            elseif move.captured_piece == BLACK_QUEEN
-                board.black_queens |= to_bb
-            end
+            board.bb_for[move.captured_piece] |= to_bb
         end
 
         # update bitboard + flags based on piece type
-        if move.piece == WHITE_KING
-            board.white_king = from_bb
-        elseif move.piece == WHITE_KNIGHT
-            board.white_knights &= ~to_bb
-            board.white_knights |= from_bb
-        elseif move.piece == WHITE_BISHOP
-            board.white_bishops &= ~to_bb
-            board.white_bishops |= from_bb
-        elseif move.piece == WHITE_ROOK
-            board.white_rooks &= ~to_bb
-            board.white_rooks |= from_bb
-        elseif move.piece == WHITE_QUEEN
-            board.white_queens &= ~to_bb
-            board.white_queens |= from_bb
-        elseif move.piece == WHITE_PAWN
-            board.white_pawns &= ~to_bb
-            board.white_pawns |= from_bb
+        board.bb_for[move.piece] &= ~to_bb
+        board.bb_for[move.piece] |= from_bb
+
+        if move.piece == WHITE_PAWN
             if move.is_ep_capture
                 ep_sqr = move.to_sqr - 8
                 board.squares[ep_sqr] = BLACK_PAWN
                 board.black_pieces |= UInt64(1) << (ep_sqr - 1)
-                board.black_pawns |= UInt64(1) << (ep_sqr - 1)
+                board.bb_for[BLACK_PAWN] |= UInt64(1) << (ep_sqr - 1)
             elseif move.promoted_piece != NO_PIECE
-                if move.promoted_piece == WHITE_QUEEN
-                    board.white_queens &= ~to_bb
-                elseif move.promoted_piece == WHITE_ROOK
-                    board.white_rooks &= ~to_bb
-                elseif move.promoted_piece == WHITE_BISHOP
-                    board.white_bishops &= ~to_bb
-                elseif move.promoted_piece == WHITE_KNIGHT
-                    board.white_knights &= ~to_bb
-                end
+                board.bb_for[move.promoted_piece] &= ~to_bb
             end
         end
     else
@@ -762,56 +693,27 @@ function unmake_move!(board::Board, move::Move)
         # update black pieces bitboard
         board.black_pieces &= ~to_bb
         board.black_pieces |= from_bb
+        board.bb_for[move.piece] &= ~to_bb
+        board.bb_for[move.piece] |= from_bb
 
         # update white pieces bitboard (ignoring en passant captures)
         if move.captured_piece != NO_PIECE && move.is_ep_capture == false
             board.white_pieces |= to_bb
-            if move.captured_piece == WHITE_PAWN
-                board.white_pawns |= to_bb
-            elseif move.captured_piece == WHITE_KNIGHT
-                board.white_knights |= to_bb
-            elseif move.captured_piece == WHITE_BISHOP
-                board.white_bishops |= to_bb
-            elseif move.captured_piece == WHITE_ROOK
-                board.white_rooks |= to_bb
-            elseif move.captured_piece == WHITE_QUEEN
-                board.white_queens |= to_bb
-            end
+            board.bb_for[move.captured_piece] |= to_bb
         end
 
+        board.bb_for[move.piece] &= ~to_bb
+        board.bb_for[move.piece] |= from_bb
+
         # update bitboard + flags based on piece type
-        if move.piece == BLACK_KING
-            board.black_king = from_bb
-        elseif move.piece == BLACK_KNIGHT
-            board.black_knights &= ~to_bb
-            board.black_knights |= from_bb
-        elseif move.piece == BLACK_BISHOP
-            board.black_bishops &= ~to_bb
-            board.black_bishops |= from_bb
-        elseif move.piece == BLACK_ROOK
-            board.black_rooks &= ~to_bb
-            board.black_rooks |= from_bb
-        elseif move.piece == BLACK_QUEEN
-            board.black_queens &= ~to_bb
-            board.black_queens |= from_bb
-        elseif move.piece == BLACK_PAWN
-            board.black_pawns &= ~to_bb
-            board.black_pawns |= from_bb
+        if move.piece == BLACK_PAWN
             if move.is_ep_capture
                 ep_sqr = move.to_sqr + 8
                 board.squares[ep_sqr] = WHITE_PAWN
                 board.white_pieces |= UInt64(1) << (ep_sqr - 1)
-                board.white_pawns |= UInt64(1) << (ep_sqr - 1)
+                board.bb_for[WHITE_PAWN] |= UInt64(1) << (ep_sqr - 1)
             elseif move.promoted_piece != NO_PIECE
-                if move.promoted_piece == BLACK_QUEEN
-                    board.black_queens &= ~to_bb
-                elseif move.promoted_piece == BLACK_ROOK
-                    board.black_rooks &= ~to_bb
-                elseif move.promoted_piece == BLACK_BISHOP
-                    board.black_bishops &= ~to_bb
-                elseif move.promoted_piece == BLACK_KNIGHT
-                    board.black_knights &= ~to_bb
-                end
+                board.bb_for[move.promoted_piece] &= ~to_bb
             end
         end
     end
@@ -821,29 +723,29 @@ function unmake_move!(board::Board, move::Move)
         board.squares[6] = NO_PIECE
         board.white_pieces &= ~(UInt64(1) << 5)
         board.white_pieces |= UInt64(1) << 7
-        board.white_rooks &= ~(UInt64(1) << 5)
-        board.white_rooks |= UInt64(1) << 7
+        board.bb_for[WHITE_ROOK] &= ~(UInt64(1) << 5)
+        board.bb_for[WHITE_ROOK] |= UInt64(1) << 7
     elseif move.castling == CASTLING_WQ
         board.squares[1] = WHITE_ROOK
         board.squares[4] = NO_PIECE
         board.white_pieces &= ~(UInt64(1) << 3)
         board.white_pieces |= UInt64(1) << 0
-        board.white_rooks &= ~(UInt64(1) << 3)
-        board.white_rooks |= UInt64(1) << 0
+        board.bb_for[WHITE_ROOK] &= ~(UInt64(1) << 3)
+        board.bb_for[WHITE_ROOK] |= UInt64(1) << 0
     elseif move.castling == CASTLING_BK
         board.squares[64] = BLACK_ROOK
         board.squares[62] = NO_PIECE
         board.black_pieces &= ~(UInt64(1) << 61)
         board.black_pieces |= UInt64(1) << 63
-        board.black_rooks &= ~(UInt64(1) << 61)
-        board.black_rooks |= UInt64(1) << 63
+        board.bb_for[BLACK_ROOK] &= ~(UInt64(1) << 61)
+        board.bb_for[BLACK_ROOK] |= UInt64(1) << 63
     elseif move.castling == CASTLING_BQ
         board.squares[57] = BLACK_ROOK
         board.squares[60] = NO_PIECE
         board.black_pieces &= ~(UInt64(1) << 59)
         board.black_pieces |= UInt64(1) << 56
-        board.black_rooks &= ~(UInt64(1) << 59)
-        board.black_rooks |= UInt64(1) << 56
+        board.bb_for[BLACK_ROOK] &= ~(UInt64(1) << 59)
+        board.bb_for[BLACK_ROOK] |= UInt64(1) << 56
     end
 
     board.side_to_move = board.side_to_move == WHITE ? BLACK : WHITE
@@ -853,22 +755,22 @@ end
 
 function in_check(board::Board, color)
     if color == WHITE
-        king_sqr = trailing_zeros(board.white_king) + 1
-        attackers = (bishop_attacks(board, king_sqr) & (board.black_bishops | board.black_queens)) |
-                    (rook_attacks(board, king_sqr) & (board.black_rooks | board.black_queens)) |
-                    (knight_attacks(board, king_sqr) & board.black_knights) |
-                    (pawn_attacks(board, king_sqr, WHITE) & board.black_pawns) |
-                    (king_attacks(board, king_sqr) & board.black_king)
+        king_sqr = trailing_zeros(board.bb_for[WHITE_KING]) + 1
+        attackers = (bishop_attacks(board, king_sqr) & (board.bb_for[BLACK_BISHOP] | board.bb_for[BLACK_QUEEN])) |
+                    (rook_attacks(board, king_sqr) & (board.bb_for[BLACK_ROOK] | board.bb_for[BLACK_QUEEN])) |
+                    (knight_attacks(board, king_sqr) & board.bb_for[BLACK_KNIGHT]) |
+                    (pawn_attacks(board, king_sqr, WHITE) & board.bb_for[BLACK_PAWN]) |
+                    (king_attacks(board, king_sqr) & board.bb_for[BLACK_KING])
         if attackers != 0
             return true
         end
     else 
-        king_sqr = trailing_zeros(board.black_king) + 1
-        attackers = (bishop_attacks(board, king_sqr) & (board.white_bishops | board.white_queens)) |
-                    (rook_attacks(board, king_sqr) & (board.white_rooks | board.white_queens)) |
-                    (knight_attacks(board, king_sqr) & board.white_knights) |
-                    (pawn_attacks(board, king_sqr, BLACK) & board.white_pawns) |
-                    (king_attacks(board, king_sqr) & board.white_king)
+        king_sqr = trailing_zeros(board.bb_for[BLACK_KING]) + 1
+        attackers = (bishop_attacks(board, king_sqr) & (board.bb_for[WHITE_BISHOP] | board.bb_for[WHITE_QUEEN])) |
+                    (rook_attacks(board, king_sqr) & (board.bb_for[WHITE_ROOK] | board.bb_for[WHITE_QUEEN])) |
+                    (knight_attacks(board, king_sqr) & board.bb_for[WHITE_KNIGHT]) |
+                    (pawn_attacks(board, king_sqr, BLACK) & board.bb_for[WHITE_PAWN]) |
+                    (king_attacks(board, king_sqr) & board.bb_for[WHITE_KING])
         if attackers != 0
             return true
         end

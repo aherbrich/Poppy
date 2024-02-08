@@ -1,21 +1,10 @@
 include("helpers.jl")
 mutable struct Board
     # one 64 field array for the board  
-    squares::Array{UInt8, 1}
+    squares::Vector{UInt8}
 
     # twelve bitboards, one for each piece type
-    white_pawns::UInt64
-    white_knights::UInt64
-    white_bishops::UInt64
-    white_rooks::UInt64
-    white_queens::UInt64
-    white_king::UInt64
-    black_pawns::UInt64
-    black_knights::UInt64
-    black_bishops::UInt64
-    black_rooks::UInt64
-    black_queens::UInt64
-    black_king::UInt64
+    bb_for::Vector{UInt64}
 
     # two bitboards, one for each side
     white_pieces::UInt64
@@ -33,31 +22,7 @@ mutable struct Board
 end # Board
 
 function Board()
-    return Board(
-        fill(0x00, 64),
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-
-        0x00000000,
-        0x00000000,
-
-        0x00,
-        0x00,
-        0x00,
-
-        0x0000,
-        0x0000
-    )
+    return Board(fill(0x00, 64), fill(0x0000000000000000, 16),  0x00000000, 0x00000000,  0x00, 0x00, 0x00,  0x0000, 0x0000)
 end # Board
 
 function clear!(board::Board)
@@ -65,18 +30,9 @@ function clear!(board::Board)
         board.squares[i] = EMPTY
     end
 
-    board.white_pawns = 0x0000000000000000
-    board.white_knights = 0x0000000000000000
-    board.white_bishops = 0x0000000000000000
-    board.white_rooks = 0x0000000000000000
-    board.white_queens = 0x0000000000000000
-    board.white_king = 0x0000000000000000
-    board.black_pawns = 0x0000000000000000
-    board.black_knights = 0x0000000000000000
-    board.black_bishops = 0x0000000000000000
-    board.black_rooks = 0x0000000000000000
-    board.black_queens = 0x0000000000000000
-    board.black_king = 0x0000000000000000
+    for i in 1:16
+        board.bb_for[i] = 0x0000000000000000
+    end
 
     board.white_pieces = 0x0000000000000000
     board.black_pieces = 0x0000000000000000
@@ -99,31 +55,7 @@ function set_piece!(board::Board, piece::UInt8, file::Int, rank::Int)
         board.black_pieces |= 1 << (square - 1)
     end
 
-    if piece == WHITE_PAWN
-        board.white_pawns |= 1 << (square - 1)
-    elseif piece == WHITE_KNIGHT
-        board.white_knights |= 1 << (square - 1)
-    elseif piece == WHITE_BISHOP
-        board.white_bishops |= 1 << (square - 1)
-    elseif piece == WHITE_ROOK
-        board.white_rooks |= 1 << (square - 1)
-    elseif piece == WHITE_QUEEN
-        board.white_queens |= 1 << (square - 1)
-    elseif piece == WHITE_KING
-        board.white_king |= 1 << (square - 1)
-    elseif piece == BLACK_PAWN
-        board.black_pawns |= 1 << (square - 1)
-    elseif piece == BLACK_KNIGHT
-        board.black_knights |= 1 << (square - 1)
-    elseif piece == BLACK_BISHOP
-        board.black_bishops |= 1 << (square - 1)
-    elseif piece == BLACK_ROOK
-        board.black_rooks |= 1 << (square - 1)
-    elseif piece == BLACK_QUEEN
-        board.black_queens |= 1 << (square - 1)
-    elseif piece == BLACK_KING
-        board.black_king |= 1 << (square - 1)
-    end
+    board.bb_for[piece] |= 1 << (square - 1)
 end # set_piece!
 
 function set_by_fen!(board::Board, fen::String)
@@ -217,18 +149,7 @@ end # set_by_fen!
 function Base.copy(board::Board)
     return Board(
         copy(board.squares),
-        board.white_pawns,
-        board.white_knights,
-        board.white_bishops,
-        board.white_rooks,
-        board.white_queens,
-        board.white_king,
-        board.black_pawns,
-        board.black_knights,
-        board.black_bishops,
-        board.black_rooks,
-        board.black_queens,
-        board.black_king,
+        copy(board.bb_for),
         board.white_pieces,
         board.black_pieces,
         board.ep_square,
@@ -269,7 +190,7 @@ function Base.show(io::IO, board::Board)
         mask::UInt64 = 0xff00000000000000
         shift = 56
         for _ in 1:8
-            println(io, join(c * " " for c in reverse(string(((board.white_pawns & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_knights & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_bishops & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_rooks & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_queens & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_king & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_pieces & mask) >> shift), base=2, pad=8))))
+            println(io, join(c * " " for c in reverse(string(((board.bb_for[WHITE_PAWN] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[WHITE_KNIGHT] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[WHITE_BISHOP] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[WHITE_ROOK] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[WHITE_QUEEN] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[WHITE_KING] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.white_pieces & mask) >> shift), base=2, pad=8))))
             mask >>= 8
             shift -= 8
         end
@@ -279,7 +200,7 @@ function Base.show(io::IO, board::Board)
         mask = 0xff00000000000000
         shift = 56
         for _ in 1:8
-            println(io, join(c * " " for c in reverse(string(((board.black_pawns & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_knights & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_bishops & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_rooks & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_queens & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_king & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_pieces & mask) >> shift), base=2, pad=8))))
+            println(io, join(c * " " for c in reverse(string(((board.bb_for[BLACK_PAWN] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[BLACK_KNIGHT] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[BLACK_BISHOP] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[BLACK_ROOK] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[BLACK_QUEEN] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.bb_for[BLACK_KING] & mask) >> shift), base=2, pad=8))), "    ", join(c * " " for c in reverse(string(((board.black_pieces & mask) >> shift), base=2, pad=8))))
             mask >>= 8
             shift -= 8
         end
