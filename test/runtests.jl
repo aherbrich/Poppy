@@ -52,7 +52,7 @@ end
                         global_nodes += nodes
                         println("| $(pad_string(fen, 84)) | $(pad_string(string(depth), 6)) | $(pad_string(string(nodes), 10)) | $(pad_string(string(result), 10)) | $(pad_string(string(round((nodes/duration)*1000, digits=3)), 17)) |")
                         println("+--------------------------------------------------------------------------------------+--------+------------+------------+-------------------+");
-                        perft!(board, parse(Int, depth)) == parse(Int, result)
+                        nodes == parse(Int, result)
                     end
                 end
             end
