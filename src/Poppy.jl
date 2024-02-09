@@ -1,4 +1,4 @@
-module nuthead
+module Poppy
 
     include("macros.jl")
     include("constants.jl")

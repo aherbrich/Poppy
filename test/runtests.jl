@@ -1,4 +1,4 @@
-using nuthead
+using Poppy
 using Test
 
 macro namedtest(name, test)
@@ -14,7 +14,7 @@ function pad_string(s, width)
     end
 end
 
-@testset "nuthead.jl" begin
+@testset "Poppy.jl" begin
     @testset "board.jl" begin
         @testset "Set & Extract FEN" begin
             positions = readlines("data/perft.txt")
